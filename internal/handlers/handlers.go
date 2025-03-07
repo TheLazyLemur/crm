@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"database/sql"
@@ -6,16 +6,27 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/go-playground/validator/v10"
+
 	"simplecrm/internal/db"
 	"simplecrm/internal/ops"
 )
 
 // User handlers
 
-func createUser(dbc *sql.DB, querier db.Querier) func(w http.ResponseWriter, r *http.Request) {
+func CreateUser(dbc *sql.DB, querier db.Querier) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req createUserRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			slog.Error(err.Error())
+			return
+		}
+
+		validate := validator.New()
+		err := validate.Struct(req)
+		validationErrors, ok := err.(validator.ValidationErrors)
+		if ok && len(validationErrors) > 0 {
 			w.WriteHeader(http.StatusBadRequest)
 			slog.Error(err.Error())
 			return
@@ -40,19 +51,19 @@ func createUser(dbc *sql.DB, querier db.Querier) func(w http.ResponseWriter, r *
 	}
 }
 
-func handleUserCommand() func(w http.ResponseWriter, r *http.Request) {
+func HandleUserCommand() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Notified"))
 	}
 }
 
-func updateUser() func(w http.ResponseWriter, r *http.Request) {
+func UpdateUser() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Updated"))
 	}
 }
 
-func getUser() func(w http.ResponseWriter, r *http.Request) {
+func GetUser() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("User"))
 	}
@@ -60,25 +71,25 @@ func getUser() func(w http.ResponseWriter, r *http.Request) {
 
 // Task handlers
 
-func createTask() func(w http.ResponseWriter, r *http.Request) {
+func CreateTask() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Created"))
 	}
 }
 
-func updateTask() func(w http.ResponseWriter, r *http.Request) {
+func UpdateTask() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Updated"))
 	}
 }
 
-func handleTaskCommand() func(w http.ResponseWriter, r *http.Request) {
+func HandleTaskCommand() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Started"))
 	}
 }
 
-func getTask() func(w http.ResponseWriter, r *http.Request) {
+func GetTask() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Task"))
 	}
@@ -86,25 +97,25 @@ func getTask() func(w http.ResponseWriter, r *http.Request) {
 
 // Lead handlers
 
-func getLead() func(w http.ResponseWriter, r *http.Request) {
+func GetLead() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Lead"))
 	}
 }
 
-func createLead() func(w http.ResponseWriter, r *http.Request) {
+func CreateLead() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Created"))
 	}
 }
 
-func updateLead() func(w http.ResponseWriter, r *http.Request) {
+func UpdateLead() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Updated"))
 	}
 }
 
-func handleLeadCommand() func(w http.ResponseWriter, r *http.Request) {
+func HandleLeadCommand() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Assigned"))
 	}
@@ -112,25 +123,25 @@ func handleLeadCommand() func(w http.ResponseWriter, r *http.Request) {
 
 // Contact handlers
 
-func createContact() func(w http.ResponseWriter, r *http.Request) {
+func CreateContact() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Created"))
 	}
 }
 
-func updateContact() func(w http.ResponseWriter, r *http.Request) {
+func UpdateContact() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Updated"))
 	}
 }
 
-func handleContactCommand() func(w http.ResponseWriter, r *http.Request) {
+func HandleContactCommand() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Contacted"))
 	}
 }
 
-func getContact() func(w http.ResponseWriter, r *http.Request) {
+func GetContact() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Contact"))
 	}

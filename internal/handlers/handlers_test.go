@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"database/sql"
@@ -27,7 +27,7 @@ func setupTest(t *testing.T) (*sql.DB, *chi.Mux, func()) {
 
 	querier := db.New()
 	r := chi.NewRouter()
-	mountRoutes(r, dbc, querier)
+	MountRoutes(r, dbc, querier)
 
 	cleanup := func() {
 		dbc.Close()
@@ -97,4 +97,46 @@ func TestCreateUser_DuplicateUserEmail(t *testing.T) {
 
 	r.ServeHTTP(w, req)
 	a.Equal(w.Code, http.StatusInternalServerError)
+}
+
+func TestCreateUser_FailValidation(t *testing.T) {
+	// Setup
+	a := require.New(t)
+	_, r, cleanup := setupTest(t)
+	defer cleanup()
+
+	// Test
+	url := "/api/v1/user/create"
+
+	tcs := []struct {
+		name string
+		pl   string
+	}{
+		{
+			name: "Missing first name",
+			pl:   `{"last_name": "Doe", "email": "john.doe@example.com"}`,
+		},
+		{
+			name: "Missing last name",
+			pl:   `{"first_name": "John", "email": "john.doe@example.com"}`,
+		},
+		{
+			name: "Missing email",
+			pl:   `{"first_name": "John", "last_name": "Doe"}`,
+		},
+		{
+			name: "Invalid email",
+			pl:   `{"first_name": "John", "last_name": "Doe", "email": "john.doe"}`,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("POST", url, strings.NewReader(tc.pl))
+			w := httptest.NewRecorder()
+
+			r.ServeHTTP(w, req)
+			a.Equal(w.Code, http.StatusBadRequest)
+		})
+	}
 }
