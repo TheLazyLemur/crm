@@ -2,20 +2,20 @@ package ops
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 
 	"simplecrm/internal/db"
 )
 
 func CreateUser(
 	ctx context.Context,
-	dbc *sql.DB,
+	dbc *sqlx.DB,
 	querier db.Querier,
 	firstName, lastName, email string,
 ) (user db.User, err error) {
-	tx, err := dbc.Begin()
+	tx, err := dbc.Beginx()
 	if err != nil {
 		return db.User{}, err
 	}

@@ -1,14 +1,13 @@
 package handlers
 
 import (
-	"database/sql"
-
 	"github.com/go-chi/chi/v5"
+	"github.com/jmoiron/sqlx"
 
 	"simplecrm/internal/db"
 )
 
-func MountRoutes(r chi.Router, dbc *sql.DB, querier db.Querier) {
+func MountRoutes(r chi.Router, dbc *sqlx.DB, querier db.Querier) {
 	r.Route("/api/v1/query", func(r chi.Router) {
 		r.Get("/user/{id}", GetUser())
 		r.Get("/lead/{id}", GetLead())

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -10,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
 
@@ -17,15 +17,15 @@ import (
 	"simplecrm/internal/db"
 )
 
-func setupTest(t *testing.T) (*sql.DB, *chi.Mux, func()) {
+func setupTest(t *testing.T) (*sqlx.DB, *chi.Mux, func()) {
 	a := require.New(t)
-	dbc, err := sql.Open("sqlite3", ":memory:")
+	dbc, err := sqlx.Connect("sqlite3", ":memory:")
 	a.NoError(err)
 
 	_, err = dbc.Exec(string(database.Migrations))
 	a.NoError(err)
 
-	querier := db.New()
+	querier := &db.Queries{}
 	r := chi.NewRouter()
 	MountRoutes(r, dbc, querier)
 

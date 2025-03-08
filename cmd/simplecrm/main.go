@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"database/sql"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 
 	"simplecrm/internal/db"
@@ -13,12 +14,12 @@ import (
 )
 
 func main() {
-	dbc, err := sql.Open("sqlite3", "./simplecrm.db")
+	dbc, err := sqlx.Connect("sqlite3", "./simplecrm.db")
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
-	querier := db.New()
+	querier := &db.Queries{}
 	querier.GetUser(context.Background(), dbc, "1")
 
 	r := chi.NewRouter()

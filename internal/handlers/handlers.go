@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"log/slog"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/jmoiron/sqlx"
 
 	"simplecrm/internal/db"
 	"simplecrm/internal/ops"
@@ -14,7 +14,7 @@ import (
 
 // User handlers
 
-func CreateUser(dbc *sql.DB, querier db.Querier) func(w http.ResponseWriter, r *http.Request) {
+func CreateUser(dbc *sqlx.DB, querier db.Querier) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req createUserRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
