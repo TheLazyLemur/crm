@@ -54,13 +54,13 @@ func TestCreateUser(t *testing.T) {
 	body, err := io.ReadAll(w.Body)
 	a.NoError(err)
 
-	var user db.User
+	var user createUserResponse
 	err = json.Unmarshal(body, &user)
 	a.NoError(err)
 
-	a.Equal(user.FirstName, "John")
-	a.Equal(user.LastName, "Doe")
-	a.Equal(user.Email, "john.doe@example.com")
+	a.Equal("John", user.FirstName)
+	a.Equal("Doe", user.LastName)
+	a.Equal("john.doe@example.com", user.Email)
 }
 
 func TestCreateUser_BadRequest(t *testing.T) {

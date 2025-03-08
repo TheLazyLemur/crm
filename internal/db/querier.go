@@ -2,11 +2,13 @@ package db
 
 import (
 	"context"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type DBExecutor interface {
-	BindNamed(query string, arg any) (string, []any, error)
 	GetContext(ctx context.Context, dest any, query string, args ...any) error
+	sqlx.Ext
 }
 
 type Querier interface {

@@ -46,8 +46,16 @@ func CreateUser(dbc *sqlx.DB, querier db.Querier) func(w http.ResponseWriter, r 
 			return
 		}
 
+		resp := createUserResponse{
+			ID:        user.ID,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Email:     user.Email,
+			CreatedAt: user.CreatedAt,
+		}
+
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(user)
+		json.NewEncoder(w).Encode(resp)
 	}
 }
 
