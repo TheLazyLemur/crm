@@ -20,8 +20,7 @@ func CreateUser(
 	querier db.Querier,
 ) handlerFunc[createUserRequest] {
 	return func(w http.ResponseWriter, r *http.Request, req createUserRequest) {
-		validationError := req.Validate()
-		if len(validationError) > 0 {
+		if validationError := req.Validate(); len(validationError) > 0 {
 			w.WriteHeader(http.StatusBadRequest)
 			slog.Error(validationError.Error())
 			return
@@ -50,7 +49,9 @@ func CreateUser(
 		}
 
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(resp)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			slog.Error(err.Error())
+		}
 	}
 }
 
