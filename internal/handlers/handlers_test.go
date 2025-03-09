@@ -112,35 +112,44 @@ func TestCreateUser_FailValidation(t *testing.T) {
 	url := "/api/v1/user/create"
 
 	tcs := []struct {
-		name string
-		pl   string
+		name        string
+		pl          string
+		contentType string
 	}{
 		{
-			name: "Missing first name",
-			pl:   `{"last_name": "Doe", "email": "john.doe@example.com"}`,
+			name:        "Missing first name",
+			pl:          `{"last_name": "Doe", "email": "john.doe@example.com"}`,
+			contentType: "application/json",
 		},
 		{
-			name: "Missing last name",
-			pl:   `{"first_name": "John", "email": "john.doe@example.com"}`,
+			name:        "Missing last name",
+			pl:          `{"first_name": "John", "email": "john.doe@example.com"}`,
+			contentType: "application/json",
 		},
 		{
-			name: "Missing email",
-			pl:   `{"first_name": "John", "last_name": "Doe"}`,
+			name:        "Missing email",
+			pl:          `{"first_name": "John", "last_name": "Doe"}`,
+			contentType: "application/json",
 		},
 		{
-			name: "Invalid email",
-			pl:   `{"first_name": "John", "last_name": "Doe", "email": "john.doe"}`,
+			name:        "Invalid email",
+			pl:          `{"first_name": "John", "last_name": "Doe", "email": "john.doe"}`,
+			contentType: "application/json",
+		},
+		{
+			name: "Missing content type",
+			pl:   `{"first_name": "John","last_name": "Doe", "email": "john.doe@example.com"}`,
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
 			req := httptest.NewRequest("POST", url, strings.NewReader(tc.pl))
-			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("Content-Type", tc.contentType)
 			w := httptest.NewRecorder()
 
 			r.ServeHTTP(w, req)
-			a.Equal(w.Code, http.StatusBadRequest)
+			a.Equal(http.StatusBadRequest, w.Code)
 		})
 	}
 }
