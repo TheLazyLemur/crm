@@ -40,13 +40,7 @@ func CreateUser(
 			return
 		}
 
-		resp := createUserResponse{
-			ID:        user.ID,
-			FirstName: user.FirstName,
-			LastName:  user.LastName,
-			Email:     user.Email,
-			CreatedAt: user.CreatedAt,
-		}
+		resp := mapUserToResponse(user)
 
 		w.WriteHeader(http.StatusCreated)
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
