@@ -14,6 +14,10 @@ CREATE TABLE IF NOT EXISTS link_types (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+INSERT INTO link_types (id, name, description) VALUES ('register', 'Register', 'Register a new user') ON CONFLICT DO NOTHING;
+INSERT INTO link_types (id, name, description) VALUES ('login', 'Login', 'Login to an existing user') ON CONFLICT DO NOTHING;
+INSERT INTO link_types (id, name, description) VALUES ('reset_password', 'Reset Password', 'Reset a user password') ON CONFLICT DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS magic_links (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
