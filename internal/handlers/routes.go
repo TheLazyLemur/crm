@@ -1,11 +1,29 @@
 package handlers
 
 import (
+	"encoding/json"
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/jmoiron/sqlx"
 
 	"simplecrm/internal/db"
 )
+
+func JSONDecoderMiddleware[Req Validatable](
+	handler handlerFunc[Req],
+) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var params Req
+
+		if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+			return
+		}
+
+		handler(w, r, params)
+	}
+}
 
 func MountRoutes(r chi.Router, dbc *sqlx.DB, querier db.Querier) {
 	r.Route("/api/v1/query", func(r chi.Router) {
@@ -16,7 +34,7 @@ func MountRoutes(r chi.Router, dbc *sqlx.DB, querier db.Querier) {
 	})
 
 	r.Route("/api/v1/user", func(r chi.Router) {
-		r.Post("/create", CreateUser(dbc, querier))
+		r.Post("/create", JSONDecoderMiddleware(CreateUser(dbc, querier)))
 		r.Post("/update/{id}", UpdateUser())
 		r.Post("/command", HandleUserCommand())
 	})

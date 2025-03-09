@@ -5,30 +5,25 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/jmoiron/sqlx"
 
 	"simplecrm/internal/db"
 	"simplecrm/internal/ops"
 )
 
+type handlerFunc[T Validatable] func(w http.ResponseWriter, r *http.Request, params T)
+
 // User handlers
 
-func CreateUser(dbc *sqlx.DB, querier db.Querier) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req createUserRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+func CreateUser(
+	dbc *sqlx.DB,
+	querier db.Querier,
+) handlerFunc[createUserRequest] {
+	return func(w http.ResponseWriter, r *http.Request, req createUserRequest) {
+		validationError := req.Validate()
+		if len(validationError) > 0 {
 			w.WriteHeader(http.StatusBadRequest)
-			slog.Error(err.Error())
-			return
-		}
-
-		validate := validator.New()
-		err := validate.Struct(req)
-		validationErrors, ok := err.(validator.ValidationErrors)
-		if ok && len(validationErrors) > 0 {
-			w.WriteHeader(http.StatusBadRequest)
-			slog.Error(err.Error())
+			slog.Error(validationError.Error())
 			return
 		}
 
