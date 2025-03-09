@@ -1,8 +1,8 @@
 package main
 
 import (
-	"context"
 	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -21,11 +21,16 @@ func main() {
 	defer dbc.Close()
 
 	querier := db.NewQueries()
-	querier.GetUser(context.Background(), dbc, "1")
 
 	r := chi.NewRouter()
 
 	handlers.MountRoutes(r, dbc, querier)
 
-	http.ListenAndServe(":8080", r)
+	server := http.Server{
+		Addr:    ":8080",
+		Handler: r,
+	}
+
+	slog.Info("Server started", "addr", server.Addr)
+	log.Fatal(server.ListenAndServe())
 }
