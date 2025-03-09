@@ -18,8 +18,9 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	defer dbc.Close()
 
-	querier := &db.Queries{}
+	querier := db.NewQueries()
 	querier.GetUser(context.Background(), dbc, "1")
 
 	r := chi.NewRouter()

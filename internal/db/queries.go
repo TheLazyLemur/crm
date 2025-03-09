@@ -6,11 +6,11 @@ import (
 
 type Queries struct{}
 
-func (queriestwo *Queries) GetUser(ctx context.Context, dbc DBExecutor, id string) (User, error) {
+func (q *Queries) GetUser(ctx context.Context, dbc DBExecutor, id string) (User, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (queriestwo *Queries) InsertAndReturnUser(
+func (q *Queries) InsertAndReturnUser(
 	ctx context.Context,
 	dbc DBExecutor,
 	arg InsertAndReturnUserParams,
@@ -37,4 +37,8 @@ func (queriestwo *Queries) InsertAndReturnUser(
 	}
 
 	return user, nil
+}
+
+func NewQueries() Querier {
+	return &Queries{}
 }
