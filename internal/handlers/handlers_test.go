@@ -46,6 +46,7 @@ func TestCreateUser(t *testing.T) {
 	url := "/api/v1/user/create"
 	pl := `{"first_name": "John", "last_name": "Doe", "email": "john.doe@example.com"}`
 	req := httptest.NewRequest("POST", url, strings.NewReader(pl))
+	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
 	r.ServeHTTP(w, req)
@@ -73,6 +74,7 @@ func TestCreateUser_BadRequest(t *testing.T) {
 	url := "/api/v1/user/create"
 	pl := ""
 	req := httptest.NewRequest("POST", url, strings.NewReader(pl))
+	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
 	r.ServeHTTP(w, req)
@@ -93,6 +95,7 @@ func TestCreateUser_DuplicateUserEmail(t *testing.T) {
 	url := "/api/v1/user/create"
 	pl := `{"first_name": "John", "last_name": "Doe", "email": "john.doe@example.com"}`
 	req := httptest.NewRequest("POST", url, strings.NewReader(pl))
+	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
 	r.ServeHTTP(w, req)
@@ -133,6 +136,7 @@ func TestCreateUser_FailValidation(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
 			req := httptest.NewRequest("POST", url, strings.NewReader(tc.pl))
+			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
 
 			r.ServeHTTP(w, req)

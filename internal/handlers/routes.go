@@ -14,6 +14,12 @@ func JSONDecoderMiddleware[Req Validatable](
 	handler handlerFunc[Req],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		isJsonRequest := r.Header.Get("Content-Type") == "application/json"
+		if !isJsonRequest {
+			http.Error(w, "Invalid Content-Type", http.StatusBadRequest)
+			return
+		}
+
 		var params Req
 
 		if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
