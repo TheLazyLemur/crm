@@ -8,6 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"simplecrm/internal/db"
+	"simplecrm/internal/pubsub"
 )
 
 func JSONDecoderMiddleware[Req Validatable](
@@ -31,7 +32,12 @@ func JSONDecoderMiddleware[Req Validatable](
 	}
 }
 
-func MountRoutes(r chi.Router, dbc *sqlx.DB, querier db.Querier) {
+func MountRoutes(
+	r chi.Router,
+	dbc *sqlx.DB,
+	querier db.Querier,
+	userCreatedEvent pubsub.UserCreatedEventServicer,
+) {
 	r.Route("/api/v1/query", func(r chi.Router) {
 		r.Get("/user/{id}", GetUser())
 		r.Get("/lead/{id}", GetLead())
@@ -40,7 +46,7 @@ func MountRoutes(r chi.Router, dbc *sqlx.DB, querier db.Querier) {
 	})
 
 	r.Route("/api/v1/user", func(r chi.Router) {
-		r.Post("/create", JSONDecoderMiddleware(CreateUser(dbc, querier)))
+		r.Post("/create", JSONDecoderMiddleware(CreateUser(dbc, querier, userCreatedEvent)))
 		r.Post("/update/{id}", UpdateUser())
 		r.Post("/command", HandleUserCommand())
 	})

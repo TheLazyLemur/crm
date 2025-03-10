@@ -17,7 +17,8 @@ func (q *Queries) InsertAndReturnUser(
 ) (User, error) {
 	query := `
 	INSERT INTO users (id, first_name, last_name, email) 
-	VALUES (:id, :first_name, :last_name, :email) RETURNING id, first_name, last_name, email, created_at
+	VALUES (:id, :first_name, :last_name, :email) 
+	RETURNING *
 	`
 
 	query, args, err := dbc.BindNamed(query, map[string]any{

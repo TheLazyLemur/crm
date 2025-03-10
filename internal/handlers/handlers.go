@@ -9,6 +9,7 @@ import (
 
 	"simplecrm/internal/db"
 	"simplecrm/internal/ops"
+	"simplecrm/internal/pubsub"
 )
 
 type handlerFunc[T Validatable] func(w http.ResponseWriter, r *http.Request, params T)
@@ -18,6 +19,7 @@ type handlerFunc[T Validatable] func(w http.ResponseWriter, r *http.Request, par
 func CreateUser(
 	dbc *sqlx.DB,
 	querier db.Querier,
+	userCreatedEventService pubsub.UserCreatedEventServicer,
 ) handlerFunc[createUserRequest] {
 	return func(w http.ResponseWriter, r *http.Request, req createUserRequest) {
 		if validationError := req.Validate(); len(validationError) > 0 {
@@ -33,6 +35,7 @@ func CreateUser(
 			req.FirstName,
 			req.LastName,
 			req.Email,
+			userCreatedEventService,
 		)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

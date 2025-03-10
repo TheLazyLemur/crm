@@ -7,6 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"simplecrm/internal/db"
+	"simplecrm/internal/pubsub"
 )
 
 func CreateUser(
@@ -14,6 +15,7 @@ func CreateUser(
 	dbc *sqlx.DB,
 	querier db.Querier,
 	firstName, lastName, email string,
+	userCreatedEventService pubsub.UserCreatedEventServicer,
 ) (user db.User, err error) {
 	tx, err := dbc.Beginx()
 	if err != nil {
@@ -38,19 +40,9 @@ func CreateUser(
 		return db.User{}, err
 	}
 
-	if err := publishUserCreatedEvent(ctx, user); err != nil {
+	if err := userCreatedEventService.Publish(ctx, user); err != nil {
 		return db.User{}, err
 	}
 
 	return user, nil
-}
-
-func publishUserCreatedEvent(
-	ctx context.Context,
-	user db.User,
-) error {
-	_ = user
-	_ = ctx
-	// TODO: Need to make a decision on which messaging system to use, for now I am thinking in a seperate sqlite db and write very specific consumer logic
-	return nil
 }

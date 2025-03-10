@@ -15,6 +15,7 @@ import (
 
 	"simplecrm/database"
 	"simplecrm/internal/db"
+	"simplecrm/internal/pubsub"
 )
 
 func setupTest(t *testing.T) (*sqlx.DB, *chi.Mux, func()) {
@@ -27,7 +28,8 @@ func setupTest(t *testing.T) (*sqlx.DB, *chi.Mux, func()) {
 
 	querier := &db.Queries{}
 	r := chi.NewRouter()
-	MountRoutes(r, dbc, querier)
+	eventService := pubsub.NewUserCreatedEventService()
+	MountRoutes(r, dbc, querier, eventService)
 
 	cleanup := func() {
 		dbc.Close()
