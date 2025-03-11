@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
 
@@ -12,20 +11,17 @@ import (
 	"simplecrm/internal/pubsub"
 )
 
-type handlerFunc[T Validatable] func(w http.ResponseWriter, r *http.Request, params T)
-
-// User handlers
-
 func CreateUser(
 	dbc *sqlx.DB,
 	querier db.Querier,
 	userCreatedEventService pubsub.UserCreatedEventServicer,
-) handlerFunc[createUserRequest] {
-	return func(w http.ResponseWriter, r *http.Request, req createUserRequest) {
+) handlerFunc[createUserRequest, createUserResponse] {
+	return func(w http.ResponseWriter, r *http.Request, req createUserRequest) (*httpResponse[createUserResponse], *httpError) {
 		if validationError := req.Validate(); len(validationError) > 0 {
-			w.WriteHeader(http.StatusBadRequest)
-			slog.Error(validationError.Error())
-			return
+			return nil, &httpError{
+				Message:    validationError.Error(),
+				StatusCode: http.StatusBadRequest,
+			}
 		}
 
 		user, err := ops.CreateUser(
@@ -38,17 +34,17 @@ func CreateUser(
 			userCreatedEventService,
 		)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
 			slog.Error(err.Error())
-			return
+			return nil, &httpError{
+				Message:    err.Error(),
+				StatusCode: http.StatusInternalServerError,
+			}
 		}
 
-		resp := mapUserToResponse(user)
-
-		w.WriteHeader(http.StatusCreated)
-		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			slog.Error(err.Error())
-		}
+		return &httpResponse[createUserResponse]{
+			Data:       mapUserToResponse(user),
+			StatusCode: http.StatusCreated,
+		}, nil
 	}
 }
 

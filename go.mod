@@ -9,6 +9,7 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/stretchr/testify v1.10.0
+	go.uber.org/mock v0.5.0
 )
 
 require (

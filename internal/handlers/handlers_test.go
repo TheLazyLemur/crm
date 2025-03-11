@@ -12,13 +12,14 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"simplecrm/database"
 	"simplecrm/internal/db"
-	"simplecrm/internal/pubsub"
+	"simplecrm/internal/pubsub/mocks"
 )
 
-func setupTest(t *testing.T) (*sqlx.DB, *chi.Mux, func()) {
+func setupTest(t *testing.T) (*sqlx.DB, *chi.Mux, mocks.MockUserCreatedEventServicer, func()) {
 	a := require.New(t)
 	dbc, err := sqlx.Connect("sqlite3", ":memory:")
 	a.NoError(err)
@@ -28,20 +29,22 @@ func setupTest(t *testing.T) (*sqlx.DB, *chi.Mux, func()) {
 
 	querier := &db.Queries{}
 	r := chi.NewRouter()
-	eventService := pubsub.NewUserCreatedEventService()
+	controller := gomock.NewController(t)
+	eventService := mocks.NewMockUserCreatedEventServicer(controller)
 	MountRoutes(r, dbc, querier, eventService)
 
 	cleanup := func() {
 		dbc.Close()
 	}
 
-	return dbc, r, cleanup
+	return dbc, r, *eventService, cleanup
 }
 
 func TestCreateUser(t *testing.T) {
 	// Setup
 	a := require.New(t)
-	_, r, cleanup := setupTest(t)
+	_, r, eventService, cleanup := setupTest(t)
+	eventService.EXPECT().Publish(gomock.Any(), gomock.Any()).Return(nil)
 	defer cleanup()
 
 	// Test
@@ -69,7 +72,7 @@ func TestCreateUser(t *testing.T) {
 func TestCreateUser_BadRequest(t *testing.T) {
 	// Setup
 	a := require.New(t)
-	_, r, cleanup := setupTest(t)
+	_, r, _, cleanup := setupTest(t)
 	defer cleanup()
 
 	// Test
@@ -86,7 +89,7 @@ func TestCreateUser_BadRequest(t *testing.T) {
 func TestCreateUser_DuplicateUserEmail(t *testing.T) {
 	// Setup
 	a := require.New(t)
-	dbc, r, cleanup := setupTest(t)
+	dbc, r, _, cleanup := setupTest(t)
 	defer cleanup()
 
 	// Test
@@ -107,7 +110,7 @@ func TestCreateUser_DuplicateUserEmail(t *testing.T) {
 func TestCreateUser_FailValidation(t *testing.T) {
 	// Setup
 	a := require.New(t)
-	_, r, cleanup := setupTest(t)
+	_, r, _, cleanup := setupTest(t)
 	defer cleanup()
 
 	// Test

@@ -11,8 +11,20 @@ import (
 	"simplecrm/internal/pubsub"
 )
 
-func JSONDecoderMiddleware[Req Validatable](
-	handler handlerFunc[Req],
+type httpError struct {
+	Message    string
+	StatusCode int
+}
+
+type httpResponse[T any] struct {
+	Data       T
+	StatusCode int
+}
+
+type handlerFunc[T Validatable, Resp any] func(w http.ResponseWriter, r *http.Request, params T) (*httpResponse[Resp], *httpError)
+
+func JSONDecoderMiddleware[Req Validatable, Resp any](
+	handler handlerFunc[Req, Resp],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		isJsonRequest := r.Header.Get("Content-Type") == "application/json"
@@ -22,13 +34,20 @@ func JSONDecoderMiddleware[Req Validatable](
 		}
 
 		var params Req
-
 		if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 			http.Error(w, "Invalid JSON", http.StatusBadRequest)
 			return
 		}
 
-		handler(w, r, params)
+		resp, err := handler(w, r, params)
+		if err != nil {
+			http.Error(w, err.Message, err.StatusCode)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(resp.StatusCode)
+		json.NewEncoder(w).Encode(resp.Data)
 	}
 }
 
@@ -36,7 +55,7 @@ func MountRoutes(
 	r chi.Router,
 	dbc *sqlx.DB,
 	querier db.Querier,
-	userCreatedEvent pubsub.UserCreatedEventServicer,
+	userCreatedEventService pubsub.UserCreatedEventServicer,
 ) {
 	r.Route("/api/v1/query", func(r chi.Router) {
 		r.Get("/user/{id}", GetUser())
@@ -46,7 +65,9 @@ func MountRoutes(
 	})
 
 	r.Route("/api/v1/user", func(r chi.Router) {
-		r.Post("/create", JSONDecoderMiddleware(CreateUser(dbc, querier, userCreatedEvent)))
+		r.Post("/create", JSONDecoderMiddleware(
+			CreateUser(dbc, querier, userCreatedEventService),
+		))
 		r.Post("/update/{id}", UpdateUser())
 		r.Post("/command", HandleUserCommand())
 	})
