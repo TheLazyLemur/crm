@@ -158,3 +158,71 @@ func TestCreateUser_FailValidation(t *testing.T) {
 		})
 	}
 }
+
+func TestGetUser(t *testing.T) {
+	tcs := []struct {
+		name              string
+		id                string
+		expetedStatusCode int
+		expected          getUserResponse
+	}{
+		{
+			name:              "Missing id",
+			id:                "",
+			expetedStatusCode: http.StatusBadRequest,
+			expected:          getUserResponse{},
+		},
+		{
+			name:              "Invalid id",
+			id:                "invalid",
+			expetedStatusCode: http.StatusInternalServerError,
+			expected:          getUserResponse{},
+		},
+		{
+			name:              "Valid id",
+			id:                "testid",
+			expetedStatusCode: http.StatusOK,
+			expected: getUserResponse{
+				ID:        "testid",
+				FirstName: "John",
+				LastName:  "Doe",
+				Email:     "john.doe@example.com",
+			},
+		},
+	}
+	// Setup
+	a := require.New(t)
+	dbc, r, _, cleanup := setupTest(t)
+	defer cleanup()
+	_, err := dbc.Exec(
+		"INSERT INTO users (id, first_name, last_name, email) VALUES ('testid', 'John', 'Doe', 'john.doe@example.com')",
+	)
+	a.NoError(err)
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			// Test
+			url := "/api/v1/query/user?id=" + tc.id
+			req := httptest.NewRequest("GET", url, nil)
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			r.ServeHTTP(w, req)
+			a.Equal(w.Code, tc.expetedStatusCode)
+
+			body, err := io.ReadAll(w.Body)
+			a.NoError(err)
+
+			if tc.expetedStatusCode == http.StatusOK {
+				var user getUserResponse
+				err = json.Unmarshal(body, &user)
+				a.NoError(err)
+
+				a.Equal(tc.expected.ID, user.ID)
+				a.Equal(tc.expected.FirstName, user.FirstName)
+				a.Equal(tc.expected.LastName, user.LastName)
+				a.Equal(tc.expected.Email, user.Email)
+			}
+		})
+	}
+}

@@ -60,9 +60,37 @@ func UpdateUser() func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func GetUser() func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("User"))
+func GetUser(
+	dbc *sqlx.DB,
+	querier db.Querier,
+) getHandlerFunc[getUserResponse] {
+	return func(w http.ResponseWriter, r *http.Request) (*httpResponse[getUserResponse], *httpError) {
+		id := r.URL.Query().Get("id")
+		if id == "" {
+			return nil, &httpError{
+				Message:    "Missing user id",
+				StatusCode: http.StatusBadRequest,
+			}
+		}
+
+		user, err := querier.GetUser(r.Context(), dbc, id)
+		if err != nil {
+			return nil, &httpError{
+				Message:    err.Error(),
+				StatusCode: http.StatusInternalServerError,
+			}
+		}
+
+		return &httpResponse[getUserResponse]{
+			Data: getUserResponse{
+				ID:        user.ID,
+				FirstName: user.FirstName,
+				LastName:  user.LastName,
+				Email:     user.Email,
+				CreatedAt: user.CreatedAt,
+			},
+			StatusCode: 200,
+		}, nil
 	}
 }
 

@@ -7,7 +7,24 @@ import (
 type Queries struct{}
 
 func (q *Queries) GetUser(ctx context.Context, dbc DBExecutor, id string) (User, error) {
-	panic("not implemented") // TODO: Implement
+	query := `
+	SELECT * FROM users WHERE id = :id
+	`
+
+	query, args, err := dbc.BindNamed(query, map[string]any{
+		"id": id,
+	})
+	if err != nil {
+		return User{}, err
+	}
+
+	var user User
+	err = dbc.GetContext(ctx, &user, query, args...)
+	if err != nil {
+		return User{}, err
+	}
+
+	return user, nil
 }
 
 func (q *Queries) InsertAndReturnUser(

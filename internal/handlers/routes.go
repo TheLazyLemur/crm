@@ -21,7 +21,10 @@ type httpResponse[T any] struct {
 	StatusCode int
 }
 
-type handlerFunc[T Validatable, Resp any] func(w http.ResponseWriter, r *http.Request, params T) (*httpResponse[Resp], *httpError)
+type (
+	handlerFunc[T Validatable, Resp any] func(w http.ResponseWriter, r *http.Request, params T) (*httpResponse[Resp], *httpError)
+	getHandlerFunc[Resp any]             func(w http.ResponseWriter, r *http.Request) (*httpResponse[Resp], *httpError)
+)
 
 func JSONDecoderMiddleware[Req Validatable, Resp any](
 	handler handlerFunc[Req, Resp],
@@ -51,6 +54,28 @@ func JSONDecoderMiddleware[Req Validatable, Resp any](
 	}
 }
 
+func JSONDecoderMiddlewareGet[Resp any](
+	handler getHandlerFunc[Resp],
+) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		isJsonRequest := r.Header.Get("Content-Type") == "application/json"
+		if !isJsonRequest {
+			http.Error(w, "Invalid Content-Type", http.StatusBadRequest)
+			return
+		}
+
+		resp, err := handler(w, r)
+		if err != nil {
+			http.Error(w, err.Message, err.StatusCode)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(resp.StatusCode)
+		json.NewEncoder(w).Encode(resp.Data)
+	}
+}
+
 func MountRoutes(
 	r chi.Router,
 	dbc *sqlx.DB,
@@ -58,7 +83,9 @@ func MountRoutes(
 	userCreatedEventService pubsub.UserCreatedEventServicer,
 ) {
 	r.Route("/api/v1/query", func(r chi.Router) {
-		r.Get("/user/{id}", GetUser())
+		r.Get("/user", JSONDecoderMiddlewareGet(
+			GetUser(dbc, querier),
+		))
 		r.Get("/lead/{id}", GetLead())
 		r.Get("/contact/{id}", GetContact())
 		r.Get("/task/{id}", GetTask())
